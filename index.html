@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Proyecto</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css">
+
+  
+    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+
+</head>
+
+<body>
+
+<a-scene>
+   
+    <!--FONDO 360 -->
+    
+  <a-plane position="0 0 -8" rotation="-90 0 0" width="4" height="4" color="#CAAA91"></a-plane>
+     <a-sky src="img/bosque.png"></a-sky>
+
+
+<!--ROCA PORTAL
+-->
+    <a-assets>
+  <a-asset-item
+    id="roca1"
+    src="3d/roca1.glb">
+  </a-asset-item>
+
+  <a-asset-item
+    id="roca2"
+    src="3d/roca2.glb">
+  </a-asset-item>
+</a-assets>
+
+
+<!-- Roca izquierda -->
+<a-entity
+  gltf-model="#roca1"
+  position="-2 -0.10 -8"
+  rotation="0 20 0"
+  scale="0.80 0.80 0.80">
+</a-entity>
+
+<!-- Roca derecha -->
+<a-entity
+  gltf-model="#roca2"
+  position="-0.25 -0.25 -1"
+  rotation="0 -20 0"
+  scale="0.80 0.80 0.80">
+</a-entity>
+
+
+
+    <!-- PORTAL -->
+  
+    <a-link 
+        href="mundo.html"
+        position="0 2 -8"
+        title="Entrar al otro mundo">
+    </a-link>
+
+   
+    <!-- CÁMARA -->
+   
+    <a-camera>
+
+        <a-cursor 
+            color="#F54927">
+        </a-cursor>
+
+    </a-camera>
+
+
+</a-scene>
+
+</body>
+
+</html>
