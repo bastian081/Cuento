@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>El camino de Tuga</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css">
+
+    <!-- A-FRAME -->
+    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+
+
+    <style>
+        /* Avatar de Tuga dentro de la ventana introductoria */
+        #tugaMensaje {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        #tugaCara {
+            width: 95px;
+            height: 95px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: tugaFlotar 3s ease-in-out infinite;
+        }
+
+        #tugaCara img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 5px 8px rgba(0,0,0,0.35));
+        }
+
+        #tugaDialogo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #tugaDialogo #narracion {
+            margin: 0;
+            text-align: center;
+        }
+
+        #tugaCara.tuga-hablando {
+            animation: tugaHabla 0.9s ease-in-out infinite alternate;
+        }
+
+        @keyframes tugaFlotar {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes tugaHabla {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-4px) scale(1.06); }
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     ESCENA PRINCIPAL
+========================================================= -->
+
+<a-scene
+    embedded
+    vr-mode-ui="enabled: true"
+    renderer="colorManagement: true"
+    background="color: #000000">
+
+
+    <!-- =====================================================
+         ASSETS
+    ====================================================== -->
+
+    <a-assets>
+
+        <!-- Fondo 360 -->
+        <img
+            id="fondo360"
+            src="img/fondo.png"
+            crossorigin="anonymous"
+        >
+
+        <!-- Tuga -->
+        <img
+            id="tuga"
+            src="3d/tuga.png"
+            crossorigin="anonymous"
+        >
+
+        <!-- Cara de Tuga para la ventana introductoria -->
+        <img
+            id="tugac"
+            src="3d/tugac.png"
+            crossorigin="anonymous"
+        >
+
+        <!-- Rocas -->
+        <a-asset-item
+            id="roca1"
+            src="3d/roca1.glb">
+        </a-asset-item>
+
+        <a-asset-item
+            id="roca2"
+            src="3d/roca2.glb">
+        </a-asset-item>
+
+        <!-- VOZ REAL DE TUGA
+             Coloca tu archivo de audio en: audio/voz.mp3 -->
+        <audio
+            id="vozTuga"
+            src="audio/voz.mp3"
+            preload="auto">
+        </audio>
+
+
+
+    </a-assets>
+
+
+    <!-- =====================================================
+         FONDO 360
+         
+         El usuario puede mover la cámara libremente.
+         Esto NO cambia de página.
+    ====================================================== -->
+
+    <a-sky
+        src="#fondo360">
+    </a-sky>
+
+
+    <!-- =====================================================
+         SUELO
+    ====================================================== -->
+
+    <a-plane
+        position="0 0 -8"
+        rotation="-90 0 0"
+        width="4"
+        height="4"
+        color="#CAAA91">
+    </a-plane>
+
+
+    <!-- =====================================================
+         ROCA IZQUIERDA
+    ====================================================== -->
+
+    <a-entity
+        gltf-model="#roca1"
+        position="-2 -0.10 -8"
+        rotation="0 20 0"
+        scale="0.80 0.80 0.80">
+    </a-entity>
+
+
+    <!-- =====================================================
+         ROCA DERECHA
+    ====================================================== -->
+
+    <a-entity
+        gltf-model="#roca2"
+        position="-0.25 -0.25 -1"
+        rotation="0 -20 0"
+        scale="0.80 0.80 0.80">
+    </a-entity>
+
+
+    <!-- =====================================================
+         TUGA
+    ====================================================== -->
+
+    <a-plane
+        id="tugaPersonaje"
+        src="#tuga"
+        position="0 1.15 -4"
+        width="1.4"
+        height="1.4"
+
+        material="
+            transparent: true;
+            alphaTest: 0.05;
+            side: double;
+        "
+
+        animation="
+            property: position;
+            to: 0 1.25 -4;
+            dur: 2200;
+            easing: easeInOutSine;
+            loop: true;
+            dir: alternate;
+        ">
+    </a-plane>
+
+
+    <!-- =====================================================
+         TEXTO 3D
+    ====================================================== -->
+
+    <a-text
+        id="tituloTuga"
+        value="ven y conoce "
+        position="0 2.60 -4"
+        align="center"
+        width="5"
+        color="#FFF8E8"
+        font="monoid">
+    </a-text>
+
+
+    <!-- =====================================================
+         SUBTÍTULO
+    ====================================================== -->
+
+    <a-text
+        id="subtituloTuga"
+        value="esta historia que esta a punto de comenzar..."
+        position="0 2.30 -4"
+        align="center"
+        width="3.8"
+        color="#F2E4D2"
+        font="monoid">
+    </a-text>
+
+
+    <!-- =====================================================
+         PORTAL
+
+         MUY IMPORTANTE:
+
+         No ponemos href inicialmente.
+
+         El href se agregará SOLAMENTE después de que:
+         1. Tuga termine de hablar.
+         2. El usuario pulse Continuar.
+
+         Así mover el 360 nunca puede llevar al usuario
+         accidentalmente al segundo mundo.
+    ====================================================== -->
+
+    <a-link
+        id="portal"
+
+        position="0 1.8 -8"
+
+        title="Bosque"
+
+        visible="false"
+
+        scale="1.2 1.2 1.2">
+
+    </a-link>
+
+
+    <!-- =====================================================
+         TEXTO DEL PORTAL
+    ====================================================== -->
+
+    <a-text
+        id="textoPortal"
+        value="ENTRAR AL BOSQUE"
+        position="0 0.65 -7.8"
+        align="center"
+        width="3"
+        color="#FFF8E8"
+        visible="false">
+    </a-text>
+
+
+    <!-- =====================================================
+         CÁMARA
+         
+         IMPORTANTE:
+         fuse="false" evita que mirar fijamente algo
+         durante unos segundos produzca automáticamente
+         un click.
+    ====================================================== -->
+
+    <a-camera
+        id="camara"
+        position="0 1.6 0">
+
+        <a-cursor
+            color="#F54927"
+            fuse="false">
+        </a-cursor>
+
+    </a-camera>
+
+
+</a-scene>
+
+
+
+<!-- =========================================================
+     INTERFAZ DE INTRODUCCIÓN
+========================================================= -->
+
+<div id="intro">
+
+
+    <!-- TÍTULO -->
+
+    <div id="introTitulo">
+
+        <h1>
+            El camino de Tuga
+        </h1>
+
+    </div>
+
+
+    <!-- TUGA + MENSAJE DE BIENVENIDA -->
+
+    <div id="introTexto">
+
+        <div id="tugaMensaje">
+
+            <!-- Cara de Tuga -->
+            <div id="tugaCara">
+                <img
+                    src="3d/tugac.png"
+                    alt="Tuga">
+            </div>
+
+            <!-- Mensaje de bienvenida -->
+            <div id="tugaDialogo">
+                <p id="narracion">
+                    ¿Listo para conocerlo?
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BOTONES ORIGINALES
+         Se conserva la estructura para que el botón
+         "Voz de Tuga" mantenga el estilo de tu diseño. -->
+
+    <div id="botones">
+
+        <button
+            id="escucharBtn">
+
+            ▶ Voz de Tuga
+
+        </button>
+
+
+        <button
+            id="continuarBtn"
+            disabled>
+
+            Continuar
+
+        </button>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     MENSAJE DE ENTRADA
+========================================================= -->
+
+<div
+    id="mensajeEntrada"
+    style="
+        position: fixed;
+        bottom: 35px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #FFF8E8;
+        font-family: Arial, sans-serif;
+        font-size: 15px;
+        letter-spacing: 1px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.8s ease;
+        pointer-events: none;
+        z-index: 20;
+    ">
+
+    Haz clic en el portal para entrar al bosque
+
+</div>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+
+    /* =====================================================
+       ELEMENTOS
+    ====================================================== */
+
+    const intro =
+        document.querySelector("#intro");
+
+
+    const escucharBtn =
+        document.querySelector("#escucharBtn");
+
+
+    const continuarBtn =
+        document.querySelector("#continuarBtn");
+
+
+    const narracion =
+        document.querySelector("#narracion");
+
+
+    /* Audio real de Tuga */
+    const vozTuga =
+        document.querySelector("#vozTuga");
+
+
+    const tugaCara =
+        document.querySelector("#tugaCara");
+
+
+    const tuga =
+        document.querySelector("#tugaPersonaje");
+
+
+    const titulo =
+        document.querySelector("#tituloTuga");
+
+
+    const subtitulo =
+        document.querySelector("#subtituloTuga");
+
+
+    const portal =
+        document.querySelector("#portal");
+
+
+    const textoPortal =
+        document.querySelector("#textoPortal");
+
+
+    const mensajeEntrada =
+        document.querySelector("#mensajeEntrada");
+
+
+
+    /* =====================================================
+       ESTADOS
+    ====================================================== */
+
+    let tugaHablo = false;
+
+    let introduccionTerminada = false;
+
+    let puedeEntrarAlBosque = false;
+
+
+
+    /* =====================================================
+       TEXTO DE TUGA
+    ====================================================== */
+
+    const textoTuga = `
+
+Mi nombre es Tuga.
+
+He viajado por tierras lejanas,
+siguiendo caminos que nunca sabía
+a dónde me llevarían.
+
+Un día, casi por casualidad,
+llegué a un bosque que no conocía.
+
+Desde lejos parecía tranquilo.
+
+Pero algo era diferente.
+
+Cada animal parecía tener su propio camino,
+su propia rutina,
+y muy poco tiempo para detenerse.
+
+Yo solo quería continuar el mío.
+
+Pero antes de seguir caminando,
+siempre hay algo que hago:
+
+saludar a quienes encuentro.
+
+Quizás tú puedas acompañarme
+a descubrir qué hay al otro lado.
+
+`;
+
+
+
+    /* =====================================================
+       ESTADO INICIAL
+    ====================================================== */
+
+    portal.setAttribute(
+        "visible",
+        false
+    );
+
+    textoPortal.setAttribute(
+        "visible",
+        false
+    );
+
+    mensajeEntrada.style.opacity = "0";
+
+
+    /*
+     * MUY IMPORTANTE:
+     *
+     * Eliminamos cualquier href inicial.
+     *
+     * De esta manera, al cargar la página,
+     * el portal NO tiene posibilidad de navegar.
+     */
+
+    portal.removeAttribute("href");
+
+
+
+    /* =====================================================
+       FUNCIÓN DE VOZ
+    ====================================================== */
+
+    function hablarTuga() {
+
+
+        /* =================================================
+           REINICIAR AUDIO
+        ================================================== */
+
+        vozTuga.pause();
+        vozTuga.currentTime = 0;
+
+
+        /* =================================================
+           REINICIAR ESTADOS
+        ================================================== */
+
+        tugaHablo = false;
+        introduccionTerminada = false;
+        puedeEntrarAlBosque = false;
+
+
+        /* =================================================
+           BLOQUEAR CONTINUAR
+        ================================================== */
+
+        continuarBtn.disabled = true;
+        continuarBtn.classList.remove("activo");
+
+
+        /* Tuga empieza a hablar */
+        tugaCara.classList.add("tuga-hablando");
+
+
+        /* =================================================
+           QUITAR EL ENLACE DEL PORTAL MIENTRAS HABLA
+        ================================================== */
+
+        portal.removeAttribute("href");
+
+
+        escucharBtn.innerHTML =
+            "◼ Tuga está hablando...";
+
+
+        narracion.innerHTML =
+            "Escucha a Tuga...";
+
+
+        /* =================================================
+           REPRODUCIR EL ARCHIVO MP3
+
+           El archivo debe estar en:
+           audio/voz.mp3
+        ================================================== */
+
+        vozTuga.play()
+            .then(() => {
+
+                console.log("La voz de Tuga comenzó.");
+
+            })
+            .catch((error) => {
+
+                console.error(
+                    "No se pudo reproducir la voz de Tuga:",
+                    error
+                );
+
+                tugaCara.classList.remove("tuga-hablando");
+
+                escucharBtn.innerHTML =
+                    "▶ Voz de Tuga";
+
+                narracion.innerHTML =
+                    "No se pudo reproducir la voz. Vuelve a intentarlo.";
+
+            });
+
+    }
+
+
+
+    /* =====================================================
+       CUANDO TERMINA EL AUDIO REAL
+
+       Solo aquí se considera que Tuga terminó de hablar.
+       Entonces se habilita Continuar.
+    ====================================================== */
+
+    vozTuga.addEventListener(
+        "ended",
+        () => {
+
+            tugaHablo = true;
+
+            tugaCara.classList.remove("tuga-hablando");
+
+
+            escucharBtn.innerHTML =
+                "↻ Escuchar nuevamente";
+
+
+            narracion.innerHTML =
+                "La historia de Tuga comienza aquí.";
+
+
+            continuarBtn.disabled = false;
+
+            continuarBtn.classList.add("activo");
+
+        }
+    );
+
+
+
+    /* =====================================================
+       ERROR DEL AUDIO
+    ====================================================== */
+
+    vozTuga.addEventListener(
+        "error",
+        () => {
+
+            tugaHablo = false;
+
+            tugaCara.classList.remove("tuga-hablando");
+
+            continuarBtn.disabled = true;
+
+            escucharBtn.innerHTML =
+                "▶ Voz de Tuga";
+
+            narracion.innerHTML =
+                "No se pudo cargar la voz de Tuga.";
+
+        }
+    );
+
+
+
+    /* =====================================================
+       BOTÓN ESCUCHAR
+    ====================================================== */
+
+    escucharBtn.addEventListener(
+        "click",
+        () => {
+
+            hablarTuga();
+
+        }
+    );
+
+
+
+    /* =====================================================
+       BOTÓN CONTINUAR
+    ====================================================== */
+
+    continuarBtn.addEventListener(
+        "click",
+        () => {
+
+
+            /*
+             * No puede continuar si la voz
+             * aún no ha terminado.
+             */
+
+            if (!tugaHablo) {
+
+                return;
+
+            }
+
+
+            /*
+             * Marcar introducción como terminada.
+             */
+
+            introduccionTerminada = true;
+
+            puedeEntrarAlBosque = true;
+
+            tugaCara.classList.remove("tuga-hablando");
+
+
+            /*
+             * Detener el audio de Tuga.
+             */
+
+            vozTuga.pause();
+
+
+            /*
+             * Ocultar ventana inicial.
+             */
+
+            intro.classList.add(
+                "ocultar"
+            );
+
+
+            /* =================================================
+               TUGA SE ALEJA
+            ================================================== */
+
+            tuga.setAttribute(
+                "animation",
+                `
+                property: position;
+                to: 0 1.15 -7;
+                dur: 1800;
+                easing: easeInQuad;
+                `
+            );
+
+
+            /* =================================================
+               OCULTAR TÍTULO
+            ================================================== */
+
+            titulo.setAttribute(
+                "animation",
+                `
+                property: opacity;
+                to: 0;
+                dur: 1000;
+                `
+            );
+
+
+            /* =================================================
+               OCULTAR SUBTÍTULO
+            ================================================== */
+
+            subtitulo.setAttribute(
+                "animation",
+                `
+                property: opacity;
+                to: 0;
+                dur: 1000;
+                `
+            );
+
+
+
+            /* =================================================
+               MOSTRAR PORTAL
+            ================================================== */
+
+            setTimeout(
+                () => {
+
+
+                    /*
+                     * AQUÍ está la corrección principal.
+                     *
+                     * Primero hacemos visible el portal.
+                     */
+
+                    portal.setAttribute(
+                        "visible",
+                        true
+                    );
+
+
+                    textoPortal.setAttribute(
+                        "visible",
+                        true
+                    );
+
+
+                    /*
+                     * DESPUÉS habilitamos realmente
+                     * la navegación.
+                     *
+                     * Antes de este momento:
+                     *
+                     * href = inexistente
+                     *
+                     * Después:
+                     *
+                     * href = mundo.html
+                     */
+
+                    portal.setAttribute(
+                        "href",
+                        "mundo.html"
+                    );
+
+
+                    /*
+                     * Animación del portal.
+                     */
+
+                    portal.setAttribute(
+                        "animation",
+                        `
+                        property: scale;
+                        from: 0.4 0.4 0.4;
+                        to: 1.2 1.2 1.2;
+                        dur: 1200;
+                        easing: easeOutElastic;
+                        `
+                    );
+
+
+                    /*
+                     * Mensaje.
+                     */
+
+                    mensajeEntrada.innerHTML =
+                        "Haz clic en el portal para entrar al bosque";
+
+
+                    mensajeEntrada.style.opacity =
+                        "1";
+
+
+                },
+                1500
+            );
+
+        }
+    );
+
+
+
+    /* =====================================================
+       HOVER DEL PORTAL
+    ====================================================== */
+
+    portal.addEventListener(
+        "mouseenter",
+        () => {
+
+
+            /*
+             * Si todavía no está desbloqueado,
+             * no hacemos nada.
+             */
+
+            if (!puedeEntrarAlBosque) {
+
+                return;
+
+            }
+
+
+            portal.setAttribute(
+                "scale",
+                "1.4 1.4 1.4"
+            );
+
+        }
+    );
+
+
+
+    portal.addEventListener(
+        "mouseleave",
+        () => {
+
+
+            if (!puedeEntrarAlBosque) {
+
+                return;
+
+            }
+
+
+            portal.setAttribute(
+                "scale",
+                "1.2 1.2 1.2"
+            );
+
+        }
+    );
+
+
+
+});
+
+</script>
+
+
+</body>
+
+</html>

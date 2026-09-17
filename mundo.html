@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El camino de Tuga — Mundo Narrativo</title>
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
+#hud{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:100;width:min(560px,calc(100vw - 32px));color:#fff8e8;text-align:center;pointer-events:none}
+#hudCard{display:inline-block;min-width:310px;max-width:100%;padding:14px 20px 16px;border-radius:16px;background:rgba(20,30,22,.78);border:1px solid rgba(255,248,232,.18);box-shadow:0 12px 30px rgba(0,0,0,.25);backdrop-filter:blur(5px)}
+#hudKicker{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.72;margin-bottom:4px}#hudStation{font-size:21px;font-weight:700;letter-spacing:1px}
+#hudGuide{margin-top:6px;font-size:13px;line-height:1.4;opacity:.9}#progress{display:flex;justify-content:center;gap:7px;margin-top:11px}.progressDot{width:34px;height:5px;border-radius:999px;background:rgba(255,255,255,.22);transition:.35s}.progressDot.active{background:#ffd54f;box-shadow:0 0 10px rgba(255,213,79,.5)}.progressDot.done{background:#9ccc65}
+#controlsHint{position:fixed;bottom:18px;left:18px;z-index:90;padding:9px 13px;border-radius:10px;color:#fff8e8;background:rgba(20,30,22,.68);border:1px solid rgba(255,255,255,.14);font-size:12px;line-height:1.35;pointer-events:none;backdrop-filter:blur(4px)}
+#toast{position:fixed;left:50%;bottom:72px;transform:translate(-50%,20px);z-index:120;max-width:min(520px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;color:#fff8e8;background:rgba(22,30,23,.92);border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 30px rgba(0,0,0,.3);text-align:center;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#storyModal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(8,16,10,.62);backdrop-filter:blur(5px)}#storyModal.visible{display:flex}
+#storyCard{width:min(720px,100%);max-height:min(760px,calc(100vh - 48px));overflow:auto;padding:30px;border-radius:22px;color:#2f342b;background:#fff8e8;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+#storyEyebrow{color:#7c8a54;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}#storyTitle{margin:8px 0 12px;font-size:clamp(28px,5vw,42px);line-height:1.05}#storyText{margin:0;font-size:17px;line-height:1.65}
+#storyConnector{margin-top:18px;padding:15px 17px;border-left:4px solid #a5b66b;border-radius:8px;background:#f0f2e8;font-size:14px;line-height:1.55}#storyConnector strong{display:block;margin-bottom:4px;color:#5d6d38;text-transform:uppercase;font-size:11px;letter-spacing:1.4px}
+#continueStationBtn{width:100%;margin-top:22px;padding:14px 18px;border:none;border-radius:12px;cursor:pointer;background:#5d6d38;color:#fff;font-size:15px;font-weight:700;letter-spacing:.5px;transition:.2s}#continueStationBtn:hover{transform:translateY(-2px);background:#4d5c2f}
+
+
+/* =========================
+   CIERRE FINAL DEL RECORRIDO
+========================== */
+#finalModal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6,14,8,.72);
+  backdrop-filter: blur(7px);
+}
+
+#finalModal.visible {
+  display: flex;
+  animation: finalFadeIn .5s ease both;
+}
+
+#finalCard {
+  width: min(690px, 100%);
+  padding: 34px 34px 30px;
+  border-radius: 24px;
+  color: #30362d;
+  background: #fff8e8;
+  box-shadow: 0 28px 85px rgba(0,0,0,.5);
+  text-align: center;
+}
+
+#finalEyebrow {
+  color: #71814c;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#finalTitle {
+  margin: 8px 0 12px;
+  font-size: clamp(30px, 6vw, 46px);
+  line-height: 1.03;
+}
+
+#finalText {
+  margin: 0 auto;
+  max-width: 570px;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+#finalReflection {
+  margin: 20px auto 0;
+  max-width: 570px;
+  padding: 16px 18px;
+  border-left: 4px solid #a5b66b;
+  border-radius: 9px;
+  background: #f0f2e8;
+  color: #525c43;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+#finalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.finalAction {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.finalAction:hover {
+  transform: translateY(-2px);
+}
+
+#homeBtn {
+  background: #5d6d38;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(93,109,56,.22);
+}
+
+#homeBtn:hover {
+  background: #4d5c2f;
+}
+
+#replayBtn {
+  background: #e6eadc;
+  color: #4e5e35;
+}
+
+#replayBtn:hover {
+  background: #dbe2cd;
+}
+
+#finalHint {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #7b8175;
+}
+
+@keyframes finalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media(max-width:700px){
+  #finalCard { padding: 26px 20px 22px; }
+  #finalActions { grid-template-columns: 1fr; }
+}
+
+@media(max-width:700px){#hudCard{min-width:0;padding:12px 15px}#hudStation{font-size:17px}#storyCard{padding:22px}#storyText{font-size:15px}#controlsHint{font-size:11px;max-width:250px}}
+
+/* === MEJORAS DE VISIBILIDAD E INTERACTIVIDAD === */
+.interactivo {
+  cursor: pointer;
+}
+.sceneImage.interactivo:hover {
+  filter: brightness(1.12) drop-shadow(0 0 14px rgba(255,213,79,.45));
+}
+
+
+.sceneImage.interactivo {
+  cursor: pointer;
+  filter: drop-shadow(0 0 14px rgba(255,213,79,.32));
+}
+.sceneImage {
+  transition: filter .2s ease;
+}
+</style>
+</head>
+<body>
+
+<div id="hud"><div id="hudCard"><div id="hudKicker">EL CAMINO DE TUGA · RECORRIDO</div><div id="hudStation">SIGUE EL SENDERO · 01 TIGRE</div><div id="hudGuide">Camina por el sendero marcado hasta la primera estación.</div><div id="progress"><div class="progressDot active" data-progress="0"></div><div class="progressDot" data-progress="1"></div><div class="progressDot" data-progress="2"></div><div class="progressDot" data-progress="3"></div></div></div></div>
+<div id="controlsHint"><strong>Explora el bosque</strong><br>Usa WASD para caminar y el mouse para mirar.</div>
+<div id="toast"></div>
+
+<div id="storyModal" aria-hidden="true"><div id="storyCard"><div id="storyEyebrow">ESTACIÓN</div><h2 id="storyTitle">Título</h2><p id="storyText">Texto</p><div id="storyConnector"><strong>Hilo del camino</strong><span id="storyConnectorText"></span></div><button id="continueStationBtn">Continuar el camino</button></div></div>
+
+<div id="finalModal" aria-hidden="true">
+  <div id="finalCard">
+    <div id="finalEyebrow">EL CAMINO DE TUGA</div>
+    <h2 id="finalTitle">Llegaste al final del camino</h2>
+    <p id="finalText">
+      Has acompañado a Tuga por sus cuatro encuentros y has llegado hasta el final del bosque.
+    </p>
+
+    <div id="finalReflection">
+      “¿De qué sirve estar tan enfocado en construir nuestros propios caminos
+      si nos estamos olvidando de construir vínculos?”
+    </div>
+
+    <div id="finalActions">
+      <button id="homeBtn" class="finalAction">Volver al inicio</button>
+      <button id="replayBtn" class="finalAction">Volver a hacer el recorrido</button>
+    </div>
+
+    <div id="finalHint">
+      Puedes regresar a la introducción o comenzar nuevamente el recorrido desde el principio.
+    </div>
+  </div>
+</div>
+
+<a-scene shadow="type: pcfsoft; autoUpdate: true" renderer="colorManagement: true; physicallyCorrectLights: true" background="color: #79D3F4" fog="type: exponential; color: #8BDCF4; density: 0.004">
+
+<a-assets>
+  <!-- Se conservan los recursos existentes -->
+  <img id="tigreyt" src="3d/tigreyt.png">
+  <img id="tigreytt" src="3d/tigreytt.png">
+  <img id="tigrettt" src="3d/tigreyttt.png">
+  <img id="alceyt" src="3d/alceyt.png">
+  <img id="alceytt" src="3d/alceytt.png">
+  <img id="alceyttt" src="3d/alceyttt.png">
+  <img id="erizoyt" src="3d/erizoyt.png">
+  <img id="erizoytt" src="3d/erizoytt.png">
+  <img id="erizoyttt" src="3d/erizottt.png">
+  <img id="win" src="3d/win.png">
+  <img id="winn" src="3d/winn.png">
+  <img id="winnn" src="3d/winnn.png">
+
+  <!-- Imagen representativa actual de cada estación.
+       Sustituye el src por tu nueva imagen cuando la tengas. -->
+  <img id="escenaTigre" src="3d/tigreyt.png">
+  <img id="escenaAlce" src="3d/alceyt.png">
+  <img id="escenaErizo" src="3d/erizoyt.png">
+  <img id="escenaWin" src="3d/win.png">
+</a-assets>
+
+<a-sky color="#79D3F4"></a-sky>
+<a-light type="ambient" color="#FFF4D2" intensity="1.05"></a-light>
+<a-light type="directional" color="#FFF8D5" intensity="1.35" position="15 30 12" castShadow="true" shadow-mapSize="2048" shadow-camera-right="50" shadow-camera-left="-50" shadow-camera-top="50" shadow-camera-bottom="-50"></a-light>
+<a-light type="point" color="#FFE9A6" intensity="0.35" distance="60" position="0 8 10"></a-light>
+
+<!-- SUELO REDUCIDO DE 80x80 A 70x70: no se elimina -->
+<a-plane id="sueloPrincipal" rotation="-90 0 0" width="70" height="70" color="#86B94B" material="flatShading: true" shadow="receive: true"></a-plane>
+
+<!-- COLINAS EXISTENTES -->
+<a-cone position="-25 -2 -15" radius-bottom="20" height="6" segments-radial="8" color="#689F38" material="flatShading: true" shadow="receive: true"></a-cone>
+<a-cone position="30 -3 -25" radius-bottom="25" height="8" segments-radial="9" color="#689F38" material="flatShading: true" shadow="receive: true"></a-cone>
+<a-cone position="0 -1.5 15" radius-bottom="18" height="4" segments-radial="7" color="#8BC34A" material="flatShading: true" shadow="receive: true"></a-cone>
+
+<!-- RÍO EXISTENTE -->
+<a-entity position="0 0.1 0"><a-plane position="-20 0 -5" rotation="-90 65 0" width="70" height="3.5" color="#039BE5" material="flatShading: true"></a-plane><a-plane position="-2 0 -2.5" rotation="-90 20 0" width="50" height="3.5" color="#039BE5" material="flatShading: true"></a-plane></a-entity>
+
+<!-- MONTAÑAS EXISTENTES -->
+<a-entity position="-10 0 -45"><a-cone position="0 12 0" segments-radial="6" radius-bottom="14" height="24" color="#795548" material="flatShading: true" shadow="cast: true"></a-cone><a-cone position="0 20 0" segments-radial="6" radius-bottom="5" height="8" color="#ECEFF1" material="flatShading: true"></a-cone></a-entity>
+<a-entity position="10 0 -35"><a-cone position="0 10 0" segments-radial="5" radius-bottom="12" height="20" color="#5D4037" material="flatShading: true" shadow="cast: true"></a-cone><a-cone position="0 17 0" segments-radial="5" radius-bottom="4" height="6" color="#ECEFF1" material="flatShading: true"></a-cone></a-entity>
+
+<!-- BOSQUE IZQUIERDO -->
+<a-entity id="bosque-izquierdo" position="-35 0 4">
+<a-entity position="0 0 0"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 5 0" radius-bottom="1" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="4 0 -3" scale=".8 .8 .8"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="-3 0 -4" scale="1.2 1.2 1.2"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#3E2723"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="7" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="7" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="5 0 2" scale=".9 .9 .9"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#4CAF50" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#4CAF50" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="-1 0 -7" scale="1.1 1.1 1.1"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+</a-entity>
+
+<!-- BOSQUE DERECHO -->
+<a-entity id="bosque-derecho" position="25 0 2">
+<a-entity position="0 0 0" scale="1.3 1.3 1.3"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="-4 0 -3" scale=".8 .8 .8"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#43A047" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#43A047" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="3 0 -5" scale="1.1 1.1 1.1"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#3E2723"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="7" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="7" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="-6 0 2" scale=".9 .9 .9"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="1 0 6"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#4CAF50" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#4CAF50" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+</a-entity>
+
+<!-- BOSQUE DE FONDO -->
+<a-entity id="bosque-fondo" position="0 0 -25">
+<a-entity position="-15 0 0" scale="1.2 1.2 1.2"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="-20 0 -4"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="0 0 -2" scale="1.4 1.4 1.4"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#3E2723"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="20 0 -3" scale=".9 .9 .9"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="5" color="#43A047" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="5" color="#43A047" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+<a-entity position="15 0 -1" scale="1.1 1.1 1.1"><a-cylinder position="0 .5 0" radius=".3" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2 0" radius-bottom="2" height="2.5" segments-radial="6" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone></a-entity>
+</a-entity>
+
+<!-- =========================================================
+     SENDERO NARRATIVO
+     Inicio -> 01 Tigre -> 02 Alce -> 03 Erizo -> 04 Win
+     El sendero es visualmente secuencial: solo el tramo actual
+     queda resaltado.
+========================================================= -->
+<a-entity id="sendero">
+  <a-plane id="sendero-0" geometry="primitive: plane; width: 3.6; height: 1" rotation="-90 0 0" material="color:#E2B96D;opacity:.98;transparent:true;flatShading:true"></a-plane>
+  <a-plane id="sendero-1" geometry="primitive: plane; width: 3.6; height: 1" rotation="-90 0 0" material="color:#A1887F;opacity:.50;transparent:true;flatShading:true"></a-plane>
+  <a-plane id="sendero-2" geometry="primitive: plane; width: 3.6; height: 1" rotation="-90 0 0" material="color:#A1887F;opacity:.50;transparent:true;flatShading:true"></a-plane>
+  <a-plane id="sendero-3" geometry="primitive: plane; width: 3.6; height: 1" rotation="-90 0 0" material="color:#A1887F;opacity:.50;transparent:true;flatShading:true"></a-plane>
+  <a-entity position="0 0.2 7">
+    <a-cylinder position="0 1.4 0" radius=".08" height="2.8" color="#5D4037"></a-cylinder>
+    <a-box position="0 2.7 0" width="3.1" height=".7" depth=".16" color="#6D4C41"></a-box>
+    <a-text value="SIGUE EL SENDERO" position="0 2.8 -.03" align="center" width="3.6" color="#FFF8E8"></a-text>
+  </a-entity>
+</a-entity>
+
+<!-- =========================================================
+     ESTACIÓN 01 — TIGRE
+     Entrada del usuario. Primera parada narrativa.
+========================================================= -->
+<a-entity id="estacion-1" position="0 0 20" data-station-index="0">
+  <a-ring id="marker-1" position="0 .08 0" rotation="-90 0 0" radius-inner=".78" radius-outer="1.05" color="#FFD54F"></a-ring>
+  <a-text value="01" position="0 .9 0" align="center" width="3.3" color="#FFF8E8"></a-text>
+  <a-text value="ESTACIÓN · TIGRE" position="0 5.3 -1.2" align="center" width="5.4" color="#FFF8E8"></a-text>
+
+  <!-- UNA SOLA IMAGEN REPRESENTATIVA -->
+  <!-- El aro usa el mismo look-at que la imagen para que nunca quede desfasado al cambiar la imagen. -->
+  <a-plane id="imagenEstacion-1" class="sceneImage sceneInteractive" src="#escenaTigre" position="0 2.75 1.55" width="4.4" height="2.75" material="transparent:true;opacity:1;side:double" look-at="#camera"></a-plane>
+  <a-ring id="marco-1" class="sceneRing" position="0 2.75 1.50" radius-inner="2.25" radius-outer="2.37" color="#FFD54F" look-at="#camera" material="side:double; transparent:true; opacity:1"></a-ring>
+  <a-text value="CLIC EN LA ESCENA PARA CONOCER LA HISTORIA" position="0 .55 1.5" align="center" width="4.9" color="#FFE082" rotation="0 180 0"></a-text>
+
+  <!-- ESCENARIO ORIGINAL DEL TIGRE -->
+  <a-entity>
+    <a-entity position="-4.8 0 -3.4" scale="0.78 0.78 0.78"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="2" height="2.2" segments-radial="6" color="#2E7D32" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#388E3C" material="flatShading:true"></a-cone></a-entity>
+    <a-entity position="4.7 0 -3.7" scale="0.74 0.74 0.74"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="2" height="2.2" segments-radial="6" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.5" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true"></a-cone></a-entity>
+    <a-entity position="-4.2 0 2.8" scale="0.70 0.70 0.70"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="2.2" height="2.2" segments-radial="6" color="#388E3C" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.6" height="2" segments-radial="6" color="#43A047" material="flatShading:true"></a-cone></a-entity>
+    <a-cylinder position="-1.5 .2 0" radius=".08" height=".6" color="#8BC34A" material="flatShading:true"></a-cylinder>
+    <a-cylinder position="-1.3 .25 .3" radius=".08" height=".7" color="#689F38" material="flatShading:true"></a-cylinder>
+    <a-cylinder position="-1.7 .2 .2" radius=".08" height=".5" color="#9CCC65" material="flatShading:true"></a-cylinder>
+    <a-cylinder position="1 .2 1" radius=".08" height=".65" color="#7CB342" material="flatShading:true"></a-cylinder>
+    <a-icosahedron position="1.5 .2 1" radius=".4" color="#757575" material="flatShading:true" shadow="cast:true" rotation="10 45 0"></a-icosahedron>
+    <a-icosahedron position="2 .1 1.5" radius=".2" color="#9E9E9E" material="flatShading:true" shadow="cast:true" rotation="0 20 10"></a-icosahedron>
+  </a-entity>
+</a-entity>
+
+<!-- =========================================================
+     ESTACIÓN 02 — ALCE
+========================================================= -->
+<a-entity id="estacion-2" position="-14 0 8" data-station-index="1">
+  <a-ring id="marker-2" position="0 .08 0" rotation="-90 0 0" radius-inner=".78" radius-outer="1.05" color="#607D68" opacity=".45"></a-ring>
+  <a-text value="02" position="0 .9 0" align="center" width="3.3" color="#DDE4D9" opacity=".55"></a-text>
+  <a-text value="ESTACIÓN · ALCE" position="0 5.7 -1.2" align="center" width="5.4" color="#DDE4D9" opacity=".55"></a-text>
+
+  <!-- UNA SOLA IMAGEN REPRESENTATIVA -->
+  <a-plane id="imagenEstacion-2" class="sceneImage sceneInteractive" src="#escenaAlce" position="0 2.75 1.55" width="4.4" height="2.75" material="transparent:true;opacity:.38;side:double" look-at="#camera"></a-plane>
+  <a-ring id="marco-2" class="sceneRing" position="0 2.75 1.50" radius-inner="2.25" radius-outer="2.37" color="#607D68" opacity=".35" look-at="#camera" material="side:double; transparent:true"></a-ring>
+  <a-text value="02 · SIGUIENTE ESTACIÓN" position="0 .55 1.5" align="center" width="4.9" color="#B0BEC5" opacity=".45" rotation="0 32.47 0"></a-text>
+
+  <!-- ESCENARIO ORIGINAL DEL ALCE -->
+  <a-entity>
+    <a-entity position="-4.7 0 -3.2" scale="1.25 1.55 1.25"><a-cylinder position="0 1 0" radius=".4" height="2" color="#3E2723" shadow="cast:true"></a-cylinder><a-cone position="0 3 0" radius-bottom="2.5" height="2.5" segments-radial="7" color="#1B5E20" material="flatShading:true" shadow="cast:true"></a-cone><a-cone position="0 4.5 0" radius-bottom="1.8" height="2.2" segments-radial="7" color="#2E7D32" material="flatShading:true"></a-cone><a-cone position="0 5.8 0" radius-bottom="1.1" height="1.8" segments-radial="7" color="#43A047" material="flatShading:true"></a-cone></a-entity>
+    <a-icosahedron position="3.1 .2 2.4" radius=".3" color="#AB47BC" material="flatShading:true" shadow="cast:true"></a-icosahedron>
+    <a-box position="-2.7 .2 2.6" width=".3" height=".4" depth=".3" color="#26A69A" material="flatShading:true" rotation="0 45 0"></a-box>
+    <a-tetrahedron position="3 .3 -2.2" radius=".35" color="#FFCA28" material="flatShading:true"></a-tetrahedron>
+  </a-entity>
+</a-entity>
+
+<!-- =========================================================
+     ESTACIÓN 03 — ERIZO
+========================================================= -->
+<a-entity id="estacion-3" position="-14 0 -12" data-station-index="2">
+  <a-ring id="marker-3" position="0 .08 0" rotation="-90 0 0" radius-inner=".78" radius-outer="1.05" color="#607D68" opacity=".45"></a-ring>
+  <a-text value="03" position="0 .9 0" align="center" width="3.3" color="#DDE4D9" opacity=".55"></a-text>
+  <a-text value="ESTACIÓN · ERIZO" position="0 4.6 -.9" align="center" width="5.4" color="#DDE4D9" opacity=".55"></a-text>
+
+  <!-- UNA SOLA IMAGEN REPRESENTATIVA -->
+  <a-plane id="imagenEstacion-3" class="sceneImage sceneInteractive" src="#escenaErizo" position="0 2.75 1.55" width="4.4" height="2.75" material="transparent:true;opacity:.38;side:double" look-at="#camera"></a-plane>
+  <a-ring id="marco-3" class="sceneRing" position="0 2.75 1.50" rotation="0 0 0" radius-inner="2.25" radius-outer="2.37" color="#607D68" opacity=".35" look-at="#camera" material="side:double; transparent:true"></a-ring>
+  <a-text value="03 · SIGUIENTE ESTACIÓN" position="0 .55 1.5" align="center" width="4.9" color="#B0BEC5" opacity=".45"></a-text>
+
+  <!-- ESCENARIO ORIGINAL DEL ERIZO -->
+  <a-entity>
+    <a-entity position="-4.7 0 -3.0" scale="0.82 0.82 0.82"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="1.8" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.3" height="2" segments-radial="6" color="#388E3C" material="flatShading:true"></a-cone></a-entity>
+    <a-entity position="4.6 0 -2.8" scale="0.82 0.82 0.82"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#4E342E"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="1.8" height="2" segments-radial="6" color="#388E3C" material="flatShading:true"></a-cone><a-cone position="0 3.5 0" radius-bottom="1.3" height="2" segments-radial="6" color="#43A047" material="flatShading:true"></a-cone></a-entity>
+    <a-cylinder position="-3.3 .18 2.8" radius=".2" height="1.8" rotation="90 25 0" color="#5D4037" material="flatShading:true" shadow="cast:true"></a-cylinder>
+    <a-cylinder position="3.2 .15 2.8" radius=".18" height="1.5" rotation="90 -15 0" color="#4E342E" material="flatShading:true" shadow="cast:true"></a-cylinder>
+    <a-cylinder position=".2 .15 3.7" radius=".15" height="1.2" rotation="0 80 90" color="#3E2723" material="flatShading:true" shadow="cast:true"></a-cylinder>
+    <a-icosahedron position="-3.7 .3 1.2" radius=".5" color="#78909C" material="flatShading:true" shadow="cast:true" rotation="10 20 30"></a-icosahedron>
+    <a-icosahedron position="3.6 .25 1.0" radius=".4" color="#90A4AE" material="flatShading:true" shadow="cast:true" rotation="40 10 5"></a-icosahedron>
+    <a-icosahedron position="0 .2 3.8" radius=".35" color="#607D8B" material="flatShading:true" shadow="cast:true"></a-icosahedron>
+  </a-entity>
+</a-entity>
+
+<!-- =========================================================
+     ESTACIÓN 04 — WIN
+========================================================= -->
+<a-entity id="estacion-4" position="10 0 -21" data-station-index="3">
+  <a-ring id="marker-4" position="0 .08 0" rotation="-90 0 0" radius-inner=".78" radius-outer="1.05" color="#607D68" opacity=".45"></a-ring>
+  <a-text value="04" position="0 .9 0" align="center" width="3.3" color="#DDE4D9" opacity=".55"></a-text>
+  <a-text value="ESTACIÓN · WIN" position="0 5.1 -1" align="center" width="5.4" color="#DDE4D9" opacity=".55"></a-text>
+
+  <!-- UNA SOLA IMAGEN REPRESENTATIVA -->
+  <a-plane id="imagenEstacion-4" class="sceneImage sceneInteractive" src="#escenaWin" position="0 2.9 1.55" width="4.4" height="2.75" material="transparent:true;opacity:.38;side:double" look-at="#camera"></a-plane>
+  <a-ring id="marco-4" class="sceneRing" position="0 2.9 1.50" radius-inner="2.25" radius-outer="2.37" color="#607D68" opacity=".35" look-at="#camera" material="side:double; transparent:true"></a-ring>
+  <a-text value="04 · CIERRE DEL CAMINO" position="0 .55 1.5" align="center" width="4.9" color="#B0BEC5" opacity=".45"></a-text>
+
+  <!-- ESCENARIO ORIGINAL DE WIN -->
+  <a-entity>
+    <a-entity position="-4.5 0 -2.5" scale="0.78 0.78 0.78"><a-cylinder position="0 .75 0" radius=".25" height="1.5" color="#5D4037"></a-cylinder><a-cone position="0 2.2 0" radius-bottom="1.8" height="2" segments-radial="6" color="#2E7D32" material="flatShading:true"></a-cone></a-entity>
+    <a-cone position="0 .4 0" radius-bottom="2.5" height=".8" segments-radial="6" color="#827717" material="flatShading:true" shadow="receive:true"></a-cone>
+    <a-box position="0 .8 0" width=".6" height=".6" depth=".6" color="#FFD700" material="flatShading:true" rotation="15 30 0" shadow="cast:true"></a-box>
+    <a-tetrahedron position="-.4 .9 .3" radius=".4" color="#FFC107" material="flatShading:true" rotation="0 45 10" shadow="cast:true"></a-tetrahedron>
+    <a-cone position=".4 .9 -.2" radius-bottom=".3" height=".6" color="#FFEA00" material="flatShading:true" rotation="-10 0 25" shadow="cast:true"></a-cone>
+    <a-box position=".2 1.2 .2" width=".4" height=".4" depth=".4" color="#FFD700" material="flatShading:true" rotation="45 45 45" shadow="cast:true"></a-box>
+    <a-sphere position="0 1.4 0" radius=".25" color="#FFF176" material="flatShading:true" shadow="cast:true"></a-sphere>
+    <!-- [ESPACIO PARA PERSONAJE 4] -->
+    <a-entity position="4 .15 2.8" rotation="0 35 0"><a-cylinder position="0 0 0" radius=".15" height="1.2" rotation="90 0 0" segments-radial="6" color="#5D4037" material="flatShading:true" shadow="cast:true"></a-cylinder><a-cylinder position=".3 0 0" radius=".15" height="1.2" rotation="90 0 0" segments-radial="6" color="#5D4037" material="flatShading:true" shadow="cast:true"></a-cylinder><a-cylinder position=".15 .25 0" radius=".15" height="1.2" rotation="90 0 0" segments-radial="6" color="#5D4037" material="flatShading:true" shadow="cast:true"></a-cylinder></a-entity>
+  </a-entity>
+</a-entity>
+
+<!-- NUBES Y LLUVIA EXISTENTES -->
+<a-entity position="-15 15 -20"><a-icosahedron position="0 0 0" radius="2.5" color="#FFFFFF" material="flatShading:true"></a-icosahedron><a-icosahedron position="2 0 1" radius="1.8" color="#FFFFFF" material="flatShading:true"></a-icosahedron><a-icosahedron position="-2 -.2 -1" radius="1.5" color="#FFFFFF" material="flatShading:true"></a-icosahedron></a-entity>
+<a-entity position="5 18 -22"><a-icosahedron position="0 0 0" radius="2.5" color="#90A4AE" material="flatShading:true"></a-icosahedron><a-icosahedron position="2 0 0" radius="1.8" color="#90A4AE" material="flatShading:true"></a-icosahedron><a-icosahedron position="-1.8 -.3 1" radius="1.6" color="#90A4AE" material="flatShading:true"></a-icosahedron><a-cylinder position="0 -4 0" radius=".05" height="1" color="#81D4FA" material="transparent:true;opacity:.6;flatShading:true"></a-cylinder><a-cylinder position="1 -5 .5" radius=".05" height="1" color="#81D4FA" material="transparent:true;opacity:.6;flatShading:true"></a-cylinder><a-cylinder position="-1 -3 -.5" radius=".05" height="1" color="#81D4FA" material="transparent:true;opacity:.6;flatShading:true"></a-cylinder></a-entity>
+<a-entity position="20 12 -15" scale=".7 .7 .7"><a-icosahedron position="0 0 0" radius="2.5" color="#FFFFFF" material="flatShading:true"></a-icosahedron><a-icosahedron position="1.5 .3 .8" radius="1.8" color="#FFFFFF" material="flatShading:true"></a-icosahedron><a-icosahedron position="-1.5 -.1 0" radius="1.6" color="#FFFFFF" material="flatShading:true"></a-icosahedron></a-entity>
+
+<a-camera id="camera" position="0 1.6 8" rotation="0 180 0" wasd-controls="acceleration:30;fly:false" look-controls><a-cursor color="#FFB74D" cursor="rayOrigin:mouse;fuse:false" raycaster="objects:.sceneInteractive, .sceneRing"></a-cursor></a-camera>
+</a-scene>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const stations = [
+    {
+      number: '01',
+      name: 'TIGRE',
+      title: 'Estación 01 · El Tigre',
+      text: 'Tuga continúa su camino y se encuentra con el tigre. No siente miedo porque ya había conocido a otro tigre. Hablan durante horas y el tigre le cuenta de otros lugares. Antes de seguir, le deja una idea: la peor manera de perder la paz es tratar de controlarla.',
+      connector: 'Este es el primer encuentro de Tuga. Al detenerse a escuchar al tigre, el recorrido empieza a convertirse en una serie de vínculos.',
+      next: 'Ahora sigue el sendero resaltado hasta 02 · ALCE.'
+    },
+    {
+      number: '02',
+      name: 'ALCE',
+      title: 'Estación 02 · El Alce',
+      text: 'Tuga se detiene frente a un árbol con unas hierbas muy raras. El alce aparece con recelo y cree que Tuga quiere robar las mejores hierbas del bosque. Tuga sube al árbol, baja las hierbas y se las entrega. Lo que pudo convertirse en conflicto termina siendo una excusa para unir a dos animales.',
+      connector: 'Después del tigre, Tuga sigue caminando y encuentra al alce. Aquí una situación que empieza desde la desconfianza se transforma mediante un gesto.',
+      next: 'Ahora sigue el sendero resaltado hasta 03 · ERIZO.'
+    },
+    {
+      number: '03',
+      name: 'ERIZO',
+      title: 'Estación 03 · El Erizo',
+      text: 'A mitad del bosque, Tuga encuentra al erizo buscando insectos, como siempre. Sin decir nada, le entrega una bolsa de sus viajes. Dentro hay insectos que el erizo nunca había visto. No dice gracias con palabras: simplemente lo mira. Y eso basta.',
+      connector: 'Aquí la conexión no necesita una conversación. Un pequeño gesto es suficiente para crear un vínculo y hacer que Tuga continúe.',
+      next: 'Ahora sigue el sendero resaltado hasta 04 · WIN.'
+    },
+    {
+      number: '04',
+      name: 'WIN',
+      title: 'Estación 04 · Win, la coneja',
+      text: 'Al final del bosque, Tuga se encuentra con Win. Ella vive rodeada de trofeos, retos y una agenda siempre llena. Cuando Tuga intenta saludarla, su respuesta vuelve a ser la misma: «Después». Tuga continúa su camino, más lento que nunca, con la sensación de haber llegado a lugares que Win quizá nunca conocería.',
+      connector: 'Este es el cierre del recorrido. Los encuentros anteriores muestran distintas formas de construir conexión; Win representa el contraste de dejar el vínculo con los demás para después.',
+      next: 'Has llegado al final del camino de Tuga.'
+    }
+  ];
+
+  const stationPositions = [
+    {x: 0, z: 20},
+    {x: -14, z: 8},
+    {x: -14, z: -12},
+    {x: 10, z: -21}
+  ];
+
+  const routePoints = [
+    {x: 0, z: 8},
+    ...stationPositions
+  ];
+
+  const camera = document.querySelector('#camera');
+  const hudStation = document.querySelector('#hudStation');
+  const hudGuide = document.querySelector('#hudGuide');
+  const toast = document.querySelector('#toast');
+  const storyModal = document.querySelector('#storyModal');
+  const storyTitle = document.querySelector('#storyTitle');
+  const storyText = document.querySelector('#storyText');
+  const storyConnectorText = document.querySelector('#storyConnectorText');
+  const continueButton = document.querySelector('#continueStationBtn');
+  const progressDots = document.querySelectorAll('.progressDot');
+
+  const finalModal = document.querySelector('#finalModal');
+  const homeBtn = document.querySelector('#homeBtn');
+  const replayBtn = document.querySelector('#replayBtn');
+
+  const paths = [
+    document.querySelector('#sendero-0'),
+    document.querySelector('#sendero-1'),
+    document.querySelector('#sendero-2'),
+    document.querySelector('#sendero-3')
+  ];
+
+  const markers = [1,2,3,4].map(n => document.querySelector('#marker-' + n));
+  const frames = [1,2,3,4].map(n => document.querySelector('#marco-' + n));
+  const images = [1,2,3,4].map(n => document.querySelector('#imagenEstacion-' + n));
+
+  let currentStation = 0;
+  const completed = [false,false,false,false];
+  const arrivalShown = [false,false,false,false];
+  let toastTimer = null;
+
+  function showToast(message, duration = 3000) {
+    clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function setAFrameVisible(el, visible) {
+    if (!el) return;
+    el.setAttribute('visible', visible);
+  }
+
+  function layoutPath(pathEl, start, end) {
+    if (!pathEl) return;
+
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const length = Math.sqrt(dx * dx + dz * dz);
+    const midX = (start.x + end.x) / 2;
+    const midZ = (start.z + end.z) / 2;
+    const yaw = Math.atan2(dx, -dz) * 180 / Math.PI;
+
+    pathEl.setAttribute('position', `${midX} 0.055 ${midZ}`);
+    pathEl.setAttribute('rotation', `-90 ${yaw} 0`);
+    pathEl.setAttribute('geometry', {
+      primitive: 'plane',
+      width: 3.6,
+      height: length
+    });
+  }
+
+  function layoutAllPaths() {
+    paths.forEach((path, index) => {
+      layoutPath(path, routePoints[index], routePoints[index + 1]);
+    });
+  }
+
+  function updateHUD() {
+    if (currentStation >= stations.length) {
+      hudStation.textContent = 'RECORRIDO COMPLETADO';
+      hudGuide.textContent = 'Has recorrido las cuatro estaciones del camino de Tuga.';
+      progressDots.forEach(d => { d.classList.remove('active'); d.classList.add('done'); });
+      updateVisuals();
+      return;
+    }
+
+    const s = stations[currentStation];
+    hudStation.textContent = `${s.number} · ${s.name}`;
+    hudGuide.textContent = currentStation === 0
+      ? 'Mira hacia el frente. Sigue el sendero iluminado y busca 01 · TIGRE.'
+      : `Sigue el sendero iluminado hasta ${s.number} · ${s.name}.`;
+
+    progressDots.forEach((d, i) => {
+      d.classList.remove('active','done');
+      if (completed[i]) d.classList.add('done');
+      if (i === currentStation) d.classList.add('active');
+    });
+
+    updateVisuals();
+  }
+
+  function updateVisuals() {
+    markers.forEach((marker, i) => {
+      if (!marker) return;
+      marker.removeAttribute('animation__pulse');
+      if (completed[i]) {
+        marker.setAttribute('color', '#9CCC65');
+        marker.setAttribute('opacity', '.9');
+      } else if (i === currentStation) {
+        marker.setAttribute('color', '#FFD54F');
+        marker.setAttribute('opacity', '1');
+        marker.setAttribute('animation__pulse', 'property:scale;from:1 1 1;to:1.22 1.22 1.22;dur:1000;dir:alternate;loop:true');
+      } else {
+        marker.setAttribute('color', '#607D68');
+        marker.setAttribute('opacity', '.38');
+      }
+    });
+
+    frames.forEach((frame, i) => {
+      if (!frame) return;
+      frame.removeAttribute('animation__pulse');
+      if (i === currentStation) {
+        frame.setAttribute('color', '#FFD54F');
+        frame.setAttribute('opacity', '1');
+        frame.setAttribute('animation__pulse', 'property:scale;from:1 1 1;to:1.06 1.06 1.06;dur:900;dir:alternate;loop:true');
+      } else if (completed[i]) {
+        frame.setAttribute('color', '#9CCC65');
+        frame.setAttribute('opacity', '.7');
+      } else {
+        frame.setAttribute('color', '#607D68');
+        frame.setAttribute('opacity', '.35');
+      }
+    });
+
+    images.forEach((img, i) => {
+      if (!img) return;
+      img.classList.remove('interactivo');
+      img.setAttribute('material', 'transparent:true; side:double; opacity:' + (i === currentStation ? '1' : (completed[i] ? '.62' : '.28')));
+      if (i === currentStation) img.classList.add('interactivo');
+    });
+
+    paths.forEach((path, i) => {
+      if (!path) return;
+      if (completed[i]) {
+        path.setAttribute('material','color:#8D6E63;opacity:.72;transparent:true;flatShading:true');
+      } else if (i === currentStation && currentStation < stations.length) {
+        path.setAttribute('material','color:#E2B96D;opacity:.98;transparent:true;flatShading:true');
+      } else {
+        path.setAttribute('material','color:#A1887F;opacity:.48;transparent:true;flatShading:true');
+      }
+    });
+  }
+
+  function distanceToStation(index) {
+    const p = camera.object3D.position;
+    const s = stationPositions[index];
+    const dx = p.x - s.x;
+    const dz = p.z - s.z;
+    return Math.sqrt(dx * dx + dz * dz);
+  }
+
+  function checkArrival() {
+    if (currentStation >= stations.length) return;
+
+    if (distanceToStation(currentStation) <= 7 && !arrivalShown[currentStation]) {
+      arrivalShown[currentStation] = true;
+      hudGuide.textContent = `Llegaste a ${stations[currentStation].number} · ${stations[currentStation].name}. Haz clic en la imagen de la escena para conocer el contexto.`;
+      showToast(`Llegaste a ${stations[currentStation].number} · ${stations[currentStation].name}. Haz clic en la escena representativa.`, 4200);
+    }
+  }
+
+  function openStation(index) {
+    if (index !== currentStation) {
+      if (index < currentStation) {
+        showToast(`Esta estación ya fue completada. Sigue el sendero hacia ${stations[currentStation].number} · ${stations[currentStation].name}.`);
+      } else {
+        showToast(`Todavía no. Primero completa ${stations[currentStation].number} · ${stations[currentStation].name}.`);
+      }
+      return;
+    }
+
+    if (distanceToStation(index) > 7) {
+      showToast(`Acércate a ${stations[index].number} · ${stations[index].name} para abrir la escena.`);
+      return;
+    }
+
+    const s = stations[index];
+    storyTitle.textContent = s.title;
+    storyText.textContent = s.text;
+    storyConnectorText.textContent = s.connector;
+    continueButton.textContent = index === stations.length - 1
+      ? 'Terminar el recorrido'
+      : `Continuar · ${s.next}`;
+
+    storyModal.classList.add('visible');
+    storyModal.setAttribute('aria-hidden','false');
+  }
+
+  /*
+   * CLICK DIRECTO EN LA IMAGEN.
+   * La clase sceneInteractive es fija para que A-Frame pueda
+   * detectarla siempre, incluso cuando cambiamos de estación.
+   */
+  images.forEach((image, index) => {
+    image.addEventListener('mouseenter', () => {
+      if (index === currentStation) {
+        image.setAttribute('scale','1.07 1.07 1.07');
+      }
+    });
+
+    image.addEventListener('mouseleave', () => {
+      image.setAttribute('scale','1 1 1');
+    });
+
+    image.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openStation(index);
+    });
+  });
+
+  /* El aro también abre la historia de la estación. */
+  frames.forEach((frame, index) => {
+    frame.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openStation(index);
+    });
+  });
+
+
+  function showFinalModal() {
+    finalModal.classList.add('visible');
+    finalModal.setAttribute('aria-hidden', 'false');
+
+    // El cierre final reemplaza temporalmente el HUD por una conclusión.
+    document.querySelector('#hud').style.opacity = '0.35';
+    document.querySelector('#controlsHint').style.opacity = '0.35';
+
+    showToast('Recorrido completado.', 2400);
+  }
+
+  homeBtn.addEventListener('click', () => {
+    /* Cambia esta ruta si tu primer HTML tiene otro nombre. */
+    window.location.href = 'index.html';
+  });
+
+  replayBtn.addEventListener('click', () => {
+    /* Recarga mundo.html para reiniciar el estado del recorrido. */
+    window.location.href = 'mundo.html';
+  });
+
+  continueButton.addEventListener('click', () => {
+    const finished = currentStation;
+    completed[finished] = true;
+
+    storyModal.classList.remove('visible');
+    storyModal.setAttribute('aria-hidden','true');
+
+    currentStation += 1;
+
+    if (currentStation >= stations.length) {
+      updateHUD();
+      setTimeout(showFinalModal, 350);
+      return;
+    }
+
+    arrivalShown[currentStation] = false;
+    updateHUD();
+    showToast(stations[finished].next, 3600);
+  });
+
+  layoutAllPaths();
+  updateHUD();
+
+  function tick() {
+    checkArrival();
+    requestAnimationFrame(tick);
+  }
+
+  tick();
+});
+</script>
+</body>
+</html>
